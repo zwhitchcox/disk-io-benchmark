@@ -15,4 +15,4 @@ typedef struct BenchmarkOptions {
   enum BMType type;
 } benchmark_options_t;
 
-void benchmark_write(struct BenchmarkOptions *options);
+int benchmark_write(struct BenchmarkOptions *o);

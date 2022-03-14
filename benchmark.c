@@ -49,8 +49,14 @@ struct OpenFlags open_flags_map[] = {
 void print_open_flags(long flags) {
   struct OpenFlags ofm;
   printf("open flags: ");
+  if (!O_RDONLY && !flags) {
+    printf("O_RDONLY\n") ;
+    return;
+  }
   for (int i = 0; i < sizeof(open_flags_map) / sizeof(open_flags_map[0]); i++) {
     ofm = open_flags_map[i];
+    // printf("checking %s\n", ofm.name);
+    // printf("%d\n", flags);
     if (ofm.num & flags) {
       printf("%s ", ofm.name);
     }
@@ -177,14 +183,13 @@ int main(int argc, char *argv[]) {
     }
     if (!bm->page_size) {
       bm->page_size = DEFAULT_PAGE_SIZE;
-      printf("page size: ", bm->page_size);
+      printf("page size: %d\n", bm->page_size);
       print_size(bm->page_size, 3);
       printf("\n");
     }
     if (!bm->num_bytes) {
       bm->num_bytes = DEFAULT_NUM_BYTES;
     }
-
     if (!bm->open_flags) {
       if (bm->type == BM_READ) {
         bm->open_flags = O_RDONLY;
@@ -193,6 +198,7 @@ int main(int argc, char *argv[]) {
       }
     }
     print_open_flags(bm->open_flags);
+
 
     if (bm->type == BM_READ) {
       benchmark_read(bm);

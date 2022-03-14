@@ -13,6 +13,7 @@
 #define KB 1024l
 #define MB (KB*KB)
 #define GB (MB*KB)
+#define TB (GB*MB)
 
 #define DEFAULT_NUM_BYTES GB
 #define DEFAULT_PAGE_SIZE 512
@@ -54,7 +55,48 @@ void print_open_flags(long flags) {
       printf("%s ", ofm.name);
     }
   }
-    printf("\n");
+  printf("\n");
+}
+
+// integer decimal point round
+long idecround(long num, long len) {
+  int precision = log10(num);
+  if (precision < len) {
+    return num;
+  }
+  return num / (precision-len);
+}
+
+// print size in KB, MB, or GB
+void print_size(long bytes, int precision) {
+  char *unit;
+  long denominator = 1;
+  if (bytes <= KB) {
+    unit = "B";
+  } else if (bytes <= MB) {
+    denominator = KB;
+    unit = "KB";
+  } else if (bytes <= GB) {
+    unit = "MB";
+    denominator = MB;
+  } else if (bytes <= TB) {
+    denominator = GB;
+    unit = "GB";
+  } else {
+    fprintf(stderr, "size too large.");
+    exit(1);
+  }
+  printf("%ld", bytes / denominator);
+  long dec = idecround(bytes % denominator, precision);
+  if (dec > 0) {
+    printf("decimal.%ld", dec);
+  }
+  printf("%s", unit);
+}
+
+void print_time(long bytes, long ms) {
+  long mbpu = bytes / MB / ms;
+  printf("MB/s: %ld.%ld\n", mbpu / 1000, idecround(mbpu % 1000, 3));
 }
 
 int benchmark_read(struct BenchmarkOptions *o) {
@@ -65,7 +107,6 @@ int benchmark_read(struct BenchmarkOptions *o) {
   char buf[o->page_size];
   long total_bytes_read = 0, bytes_read;
   long start = millis();
-  int i = 0;
   while (total_bytes_read < o->num_bytes) {
     bytes_read = read(file, buf, o->page_size);
     if (bytes_read < 0 && errno != EAGAIN) {
@@ -73,20 +114,8 @@ int benchmark_read(struct BenchmarkOptions *o) {
       return 1;
     }
     total_bytes_read += bytes_read;
-    if (!i) {
-      printf("%s\n", buf);
-    }
-    i++;
   }
-  long end = millis();
-  long time = end - start;
-  printf("Time: %ld.%ld\n", time / 1000, time % 1000);
-  printf("MB: %ld\n", total_bytes_read / MB);
-  printf("MB/s: %ld.%ld\n", (total_bytes_read * 1000l / MB / time), (total_bytes_read * 1000l % (MB * time)) / 1000000);
-  // int des = open(o->des, o->w_open_flags, 0666);
-  // if (!des) {
-  //   printf("Error opening destination file '%s': %s\n", o->des, strerror(errno));
-  // }
+  print_time(o->num_bytes, millis() - start);
 }
 
 int benchmark_write(struct BenchmarkOptions *o) {
@@ -97,7 +126,6 @@ int benchmark_write(struct BenchmarkOptions *o) {
   char buf[o->page_size];
   long total_bytes_read = 0, bytes_read;
   long start = millis();
-  int i = 0;
   // random string
   char *hello = "hello";
   int len = strlen(hello);
@@ -111,10 +139,6 @@ int benchmark_write(struct BenchmarkOptions *o) {
       return 1;
     }
     total_bytes_read += bytes_read;
-    if (!i) {
-      printf("%s\n", buf);
-    }
-    i++;
   }
   long end = millis();
   long time = end - start;
@@ -144,9 +168,8 @@ struct BenchmarkOptions bm3 = {
 struct BenchmarkOptions *benchmarks[] = {&bm1, &bm2, &bm3};
 
 int main(int argc, char *argv[]) {
-  print_open_flags(O_DIRECT | O_CREAT);
-  return 0;
   char *file = argv[1];
+  printf("\n");
   for (int i = 0; i < sizeof(benchmarks) / sizeof(benchmarks[0]); i++) {
     struct BenchmarkOptions *bm = benchmarks[i];
     if (!bm->file) {
@@ -154,14 +177,28 @@ int main(int argc, char *argv[]) {
     }
     if (!bm->page_size) {
       bm->page_size = DEFAULT_PAGE_SIZE;
+      printf("page size: ", bm->page_size);
+      print_size(bm->page_size, 3);
+      printf("\n");
     }
     if (!bm->num_bytes) {
       bm->num_bytes = DEFAULT_NUM_BYTES;
     }
+
+    if (!bm->open_flags) {
+      if (bm->type == BM_READ) {
+        bm->open_flags = O_RDONLY;
+      } else if (bm->type == BM_WRITE) {
+        bm->open_flags = O_WRONLY | O_CREAT;
+      }
+    }
+    print_open_flags(bm->open_flags);
+
     if (bm->type == BM_READ) {
       benchmark_read(bm);
     } else if (bm->type == BM_WRITE) {
       benchmark_write(bm);
     }
+    printf("\n");
   }
 }

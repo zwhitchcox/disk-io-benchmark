@@ -11,7 +11,7 @@ typedef struct BenchmarkOptions {
   int open_flags;
   int page_size;
   char *file;
-  int num_bytes;
+  long num_bytes;
   enum BMType type;
 } benchmark_options_t;
 

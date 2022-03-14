@@ -95,14 +95,15 @@ void print_size(long bytes, int precision) {
   printf("%ld", bytes / denominator);
   long dec = idecround(bytes % denominator, precision);
   if (dec > 0) {
-    printf("decimal.%ld", dec);
+    printf(".%ld", dec);
   }
   printf("%s", unit);
 }
 
 void print_time(long bytes, long ms) {
-  long mbpu = bytes / MB / ms;
-  printf("MB/s: %ld.%ld\n", mbpu / 1000, idecround(mbpu % 1000, 3));
+  int precision = 1000;
+  long mbpu = bytes*precision / MB * 1000 / ms;
+  printf("MB/s: %ld.%ld\n", mbpu / precision, idecround(mbpu % precision, 3));
 }
 
 int benchmark_read(struct BenchmarkOptions *o) {
@@ -148,9 +149,7 @@ int benchmark_write(struct BenchmarkOptions *o) {
   }
   long end = millis();
   long time = end - start;
-  printf("Time: %ld.%ld\n", time / 1000, time % 1000);
-  printf("MB: %ld\n", total_bytes_read / MB);
-  printf("MB/s: %ld.%ld\n", (total_bytes_read * 1000l / MB / time), (total_bytes_read * 1000l % (MB * time)) / 1000000);
+  print_time(o->num_bytes, millis() - start);
 }
 
 struct BenchmarkOptions bm1 = {
@@ -183,12 +182,13 @@ int main(int argc, char *argv[]) {
     }
     if (!bm->page_size) {
       bm->page_size = DEFAULT_PAGE_SIZE;
-      printf("page size: %d\n", bm->page_size);
+      printf("page size: ");
       print_size(bm->page_size, 3);
       printf("\n");
     }
     if (!bm->num_bytes) {
       bm->num_bytes = DEFAULT_NUM_BYTES;
+      printf("num bytes: %ld\n", bm->num_bytes);
     }
     if (!bm->open_flags) {
       if (bm->type == BM_READ) {

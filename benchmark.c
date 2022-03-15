@@ -152,25 +152,6 @@ int benchmark_write(struct BenchmarkOptions *o) {
   print_time(o->num_bytes, millis() - start);
 }
 
-struct BenchmarkOptions bm1 = {
-  .type = BM_READ,
-  .open_flags = O_RDONLY,
-  .file = "/dev/sda",
-};
-struct BenchmarkOptions bm2 = {
-  .type = BM_READ,
-  .open_flags = O_RDONLY,
-  .file = "./test.txt",
-  // .page_size = 4096,
-};
-struct BenchmarkOptions bm3 = {
-  .type = BM_WRITE,
-  .open_flags = O_WRONLY | O_CREAT,
-  .file = "/dev/sda",
-};
-
-
-struct BenchmarkOptions *benchmarks[] = {&bm1, &bm2, &bm3};
 
 int main(int argc, char *argv[]) {
   char *file = argv[1];

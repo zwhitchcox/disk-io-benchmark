@@ -3,16 +3,14 @@
 #endif
 
 enum BMType {
-  BM_READ = 1 << 0,
-  BM_WRITE = 1 << 2,
+  BM_READ,
+  BM_WRITE,
 };
 
-typedef struct BenchmarkOptions {
+typedef struct BenchmarkOpts {
   int open_flags;
   int page_size;
   char *file;
   long num_bytes;
   enum BMType type;
-} benchmark_options_t;
-
-int benchmark_write(struct BenchmarkOptions *o);
+} benchmark_opts_t;

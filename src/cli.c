@@ -6,6 +6,7 @@
 
 #include "cli.h"
 #include "benchmark.h"
+#include "results.h"
 
 #define DEFAULT_PAGE_SIZE 512
 #define MAX_FILES 1024
@@ -106,21 +107,22 @@ int main(int argc, char *argv[]) {
   cur_file = files;
   while (*cur_file) {
     if (write_bytes) {
-      benchmark_write((struct BenchmarkOptions) {
+      print_results(benchmark_write((struct BenchmarkOptions) {
         .bytes = write_bytes,
         .file = *cur_file,
         .page_size = DEFAULT_PAGE_SIZE,
-        .open_flags = O_CREAT | O_WRONLY,
-      });
+        .open_flags = O_CREAT | O_WRONLY | O_TRUNC,
+      }));
     }
     if (read_bytes) {
-      benchmark_read((struct BenchmarkOptions) {
+      print_results(benchmark_read((struct BenchmarkOptions) {
         .bytes = read_bytes,
         .file = *cur_file,
         .page_size = DEFAULT_PAGE_SIZE,
         .open_flags = O_RDONLY,
-      });
+      }));
     }
+    cur_file++;
   }
   // char *file = argv[1];
 }

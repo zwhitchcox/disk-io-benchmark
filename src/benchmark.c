@@ -18,9 +18,10 @@ long millis(){
 }
 
 struct BenchmarkResults *benchmark_read(struct BenchmarkOptions o) {
-  int file = open(o.file, o.open_flags, 0666);
-  if (!file) {
+  int file;
+  if ((file = open(o.file, o.open_flags, 0666)) <= 0) {
     printf("Error opening source file '%s': %s\n", o.file, strerror(errno));
+    exit(1);
   }
   char buf[o.page_size];
   long total_bytes_read = 0, bytes_read;
@@ -28,7 +29,7 @@ struct BenchmarkResults *benchmark_read(struct BenchmarkOptions o) {
   while (total_bytes_read < o.bytes) {
     bytes_read = read(file, buf, o.page_size);
     if (bytes_read < 0 && errno != EAGAIN) {
-      fprintf(stderr, "%s\n", strerror(errno));
+      fprintf(stderr, "Read error: %s\n", strerror(errno));
       exit(1);
     }
     total_bytes_read += bytes_read;
@@ -45,21 +46,21 @@ struct BenchmarkResults *benchmark_write(struct BenchmarkOptions o) {
     printf("Error opening source file '%s': %s\n", o.file, strerror(errno));
   }
   char buf[o.page_size];
-  long total_bytes_read = 0, bytes_read;
+  long total_bytes_written = 0, bytes_written;
   long start = millis();
   // random string
-  char *hello = "hello";
+  char *hello = "Is this actually working";
   int len = strlen(hello);
   for (int i = 0; i < o.page_size; i++) {
     buf[i] = hello[i % len];
   }
-  while (total_bytes_read < o.bytes) {
-    bytes_read = write(file, buf, o.page_size);
-    if (bytes_read < 0 && errno != EAGAIN) {
-      fprintf(stderr, "%s\n", strerror(errno));
+  while (total_bytes_written < o.bytes) {
+    bytes_written = write(file, buf, o.page_size);
+    if (bytes_written < 0 && errno != EAGAIN) {
+      fprintf(stderr, "write error: %s\n", strerror(errno));
       exit(1);
     }
-    total_bytes_read += bytes_read;
+    total_bytes_written += bytes_written;
   }
   long end = millis();
   long time = end - start;

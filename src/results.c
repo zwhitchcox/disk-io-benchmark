@@ -60,29 +60,37 @@ void sprint_size(char *s, long bytes, int precision) {
   long denominator = 1;
   if (bytes <= KB) {
     unit = "B";
-  } else if (bytes <= MB) {
-    denominator = KB;
+  } else if (bytes < MB) {
     unit = "KB";
-  } else if (bytes <= GB) {
+    denominator = KB;
+  } else if (bytes < GB) {
     unit = "MB";
     denominator = MB;
-  } else if (bytes <= TB) {
+  } else if (bytes < TB) {
     denominator = GB;
     unit = "GB";
   } else {
     fprintf(stderr, "size too large.");
     exit(1);
   }
-  sprintf(s, "%ld", bytes / denominator);
   long dec = idecround(bytes % denominator, precision);
+  s += sprintf(s, "%ld", bytes / denominator);
   if (dec > 0) {
-    printf(".%ld", dec);
+    s += sprintf(s, ".%ld", dec);
   }
-  sprintf(s, "%s", unit);
+  s += sprintf(s, "%s", unit);
 }
 
 void print_speed(long bytes, long ms) {
   int precision = 1000;
   long mbpu = bytes*precision / MB * 1000 / ms;
   printf("MB/s: %ld.%ld\n", mbpu / precision, idecround(mbpu % precision, 3));
+}
+
+void print_results(struct BenchmarkResults *results) {
+  char s[1000];
+  printf("time: %ld\n", results->time);
+  sprint_size(s, results->bytes, 3);
+  printf("bytes: %s\n", s);
+  printf("MB/s: %ld\n", results->bytes * 1000  / MB / results->time);
 }

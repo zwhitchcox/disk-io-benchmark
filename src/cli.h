@@ -1,6 +1,10 @@
-#ifndef O_DIRECT
-#define O_DIRECT 16348
-#endif
+#include "benchmark.h"
+
+#ifndef __BENCHMARK_CLI__
+#define __BENCHMARK_CLI__
+
+#define DEFAULT_NUM_BYTES GB
+#define DEFAULT_PAGE_SIZE 512
 
 enum BMType {
   BM_READ,
@@ -14,3 +18,5 @@ typedef struct BenchmarkOpts {
   long num_bytes;
   enum BMType type;
 } benchmark_opts_t;
+
+#endif

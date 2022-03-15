@@ -9,12 +9,12 @@ debug:
 
 .PHONY: clean
 clean:
-	rm -f *.test
+	rm -f *.test *.gch a.out
 
 .PHONY: test
 benchmark: clean
-	$(CC) $(shell ls *.h | grep -v benchmark) $(shell ls *.c | grep -v benchmark) -o $@ $@.c -lm
-	sudo ./$@ src dest
+	mkdir -p build;
+	$(CC) $(shell ls src/*.h) $(shell ls src/*.c) -o build/$@ -lm
 
 .PHONY: test
 benchmark.debug: clean

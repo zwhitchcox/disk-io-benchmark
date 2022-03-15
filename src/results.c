@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <math.h>
 
-#include "benchmark.h"
 #include "results.h"
+#include "helpers.h"
+#include "benchmark.h"
 
 // integer decimal point round
 long idecround(long num, long len) {

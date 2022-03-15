@@ -2,8 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fcntl.h>
 
 #include "cli.h"
+#include "benchmark.h"
 
 #define DEFAULT_PAGE_SIZE 512
 #define MAX_FILES 1024
@@ -90,6 +92,9 @@ int main(int argc, char *argv[]) {
       read_bytes = normalize_bytes(argv[++i]);
     } else if (!strcmp(argv[i], "-w")) {
       write_bytes = normalize_bytes(argv[++i]);
+    }else if (!strcmp(argv[i], "-rw") || !strcmp(argv[i], "-wr")) {
+      read_bytes  = normalize_bytes(argv[i]);
+      write_bytes = normalize_bytes(argv[++i]);
     } else {
       *cur_file++ = argv[i];
     }
@@ -98,7 +103,25 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "No files specified\n");
     exit(1);
   }
-  benchmark(argv[1]);
+  cur_file = files;
+  while (*cur_file) {
+    if (write_bytes) {
+      benchmark_write((struct BenchmarkOptions) {
+        .bytes = write_bytes,
+        .file = *cur_file,
+        .page_size = DEFAULT_PAGE_SIZE,
+        .open_flags = O_CREAT | O_WRONLY,
+      });
+    }
+    if (read_bytes) {
+      benchmark_read((struct BenchmarkOptions) {
+        .bytes = read_bytes,
+        .file = *cur_file,
+        .page_size = DEFAULT_PAGE_SIZE,
+        .open_flags = O_RDONLY,
+      });
+    }
+  }
   // char *file = argv[1];
 }
 

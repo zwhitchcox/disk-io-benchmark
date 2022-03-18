@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#include <xxhash.h>
 
 #include "helpers.h"
 #include "benchmark.h"
@@ -34,10 +35,36 @@ struct BenchmarkResults *benchmark_read(struct BenchmarkOptions o) {
     }
     total_bytes_read += bytes_read;
   }
+
+  XXH64_state_t* const state = XXH64_createState();
+  if (state==NULL) abort();
   struct BenchmarkResults *results = malloc(sizeof(struct BenchmarkResults));
   results->time = millis() - start;
   results->bytes = o.bytes;
   return results;
+
+  void* const buffer = malloc(buf_size);
+  if (buffer==NULL) abort();
+
+  /* Initialize state with selected seed */
+  XXH64_hash_t const seed = 100;   /* or any other value */
+  if (XXH64_reset(state, seed) == XXH_ERROR) abort();
+
+  int length = 1;
+  /* Feed the state with input data, any size, any number of times */
+  while (length) {
+      length = read(fd, buf, buf_size);
+      if (XXH64_update(state, buffer, length) == XXH_ERROR) abort();
+  }
+
+  /* Produce the final hash value */
+  XXH64_hash_t const hash = XXH64_digest(state);
+
+  /* State could be re-used; but in this example, it is simply freed  */
+  free(buffer);
+  XXH64_freeState(state);
+
+  return hash;
 }
 
 struct BenchmarkResults *benchmark_write(struct BenchmarkOptions o) {

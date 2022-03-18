@@ -70,9 +70,9 @@ long text_to_multiple(char *s) {
   }
 }
 
-long normalize_bytes(char *bytes) {
+long long normalize_bytes(char *bytes) {
   char *str;
-  long num = 0;
+  long long num = 0;
   while (isdigit(*bytes)) {
     num *= 10;
     num += (*bytes++ - '0') % 10;
@@ -86,16 +86,11 @@ long normalize_bytes(char *bytes) {
 int main(int argc, char *argv[]) {
   char *files[MAX_FILES];
   char **cur_file = files;
-  long read_bytes = 0;
+  long long bytes = 0;
   long write_bytes = 0;
   for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "-r")) {
-      read_bytes = normalize_bytes(argv[++i]);
-    } else if (!strcmp(argv[i], "-w")) {
-      write_bytes = normalize_bytes(argv[++i]);
-    }else if (!strcmp(argv[i], "-rw") || !strcmp(argv[i], "-wr")) {
-      read_bytes  = normalize_bytes(argv[i]);
-      write_bytes = normalize_bytes(argv[++i]);
+    if (!strcmp(argv[i], "-b")) {
+      bytes = normalize_bytes(argv[++i]);
     } else {
       *cur_file++ = argv[i];
     }

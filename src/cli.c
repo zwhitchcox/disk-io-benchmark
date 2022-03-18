@@ -6,10 +6,8 @@
 
 #include "cli.h"
 #include "benchmark.h"
+#include "common.h"
 #include "results.h"
-
-#define DEFAULT_PAGE_SIZE 512
-#define MAX_FILES 1024
 
 // check if s1 starts with s2
 int starts_with(char *s1, char *s2) {
@@ -70,7 +68,7 @@ long text_to_multiple(char *s) {
   }
 }
 
-long normalize_bytes(char *bytes) {
+ull normalize_bytes(char *bytes) {
   char *str;
   long num = 0;
   while (isdigit(*bytes)) {
@@ -83,61 +81,54 @@ long normalize_bytes(char *bytes) {
   return num;
 }
 
+char *get_buf(struct BenchmarkOpts *o) {
+  return malloc(sizeof(char) * o->page_size);
+}
+
+void fill_buf(struct BenchmarkOpts *o, char *str) {
+  int len = strlen(str);
+  for (int i = 0; i < o->page_size; i++) {
+    o->buf[i] = o->buf[i % len];
+  }
+}
+
 int main(int argc, char *argv[]) {
   char *files[MAX_FILES];
   char **cur_file = files;
-  long read_bytes = 0;
-  long write_bytes = 0;
+  ull bytes = 0;
+  int page_size = 0;
   for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "-r")) {
-      read_bytes = normalize_bytes(argv[++i]);
-    } else if (!strcmp(argv[i], "-w")) {
-      write_bytes = normalize_bytes(argv[++i]);
-    }else if (!strcmp(argv[i], "-rw") || !strcmp(argv[i], "-wr")) {
-      read_bytes  = normalize_bytes(argv[i]);
-      write_bytes = normalize_bytes(argv[++i]);
+    if (!strcmp(argv[i], "-b")) {
+      bytes = normalize_bytes(argv[++i]);
+    } else if (!strcmp(argv[i], "-p")) {
+      page_size = normalize_bytes(argv[++i]);
     } else {
       *cur_file++ = argv[i];
     }
   }
+
+  page_size = page_size ? page_size : 64ull*KB;
+  bytes = bytes ? bytes : 512ull*MB;
+
+
   if (cur_file == files) {
     fprintf(stderr, "No files specified\n");
     exit(1);
   }
+
   cur_file = files;
+  struct BenchmarkOpts *o = malloc(sizeof(struct BenchmarkOpts));
+  o->bytes = bytes;
+  o->io = *cur_file;
+  o->page_size = page_size;
+
   while (*cur_file) {
-    if (write_bytes) {
-      print_results(benchmark_write((struct BenchmarkOptions) {
-        .bytes = write_bytes,
-        .file = *cur_file,
-        .page_size = DEFAULT_PAGE_SIZE,
-        .open_flags = O_CREAT | O_WRONLY | O_TRUNC,
-      }));
-    }
-    if (read_bytes) {
-      print_results(benchmark_read((struct BenchmarkOptions) {
-        .bytes = read_bytes,
-        .file = *cur_file,
-        .page_size = DEFAULT_PAGE_SIZE,
-        .open_flags = O_RDONLY,
-      }));
-    }
+    printf("WRITE\n");
+    print_results(benchmark_write(o));
+    printf("\n");
+    printf("READ\n");
+    print_results(benchmark_read(o));
     cur_file++;
   }
   // char *file = argv[1];
 }
-
-// int main(int argc, char *argv[]) {
-  // struct BenchmarkOpts *opts = malloc(sizeof(struct BenchmarkOpts));
-  // if (argc < 3) {
-  //   fprintf(stderr, "not enough arguments.");
-  //   exit(1);
-  // }
-  // char *infile = argv[1];
-  // char **ofiles = malloc(sizeof(argv[0]) * argc - 1);
-  // for (int i = 0; i < argc - 2; i++) {
-  //   ofiles[i] = argv[i+2];
-  // }
-  // ofiles[argc-1] = NULL;
-  // char **cur = ofiles;
-// }

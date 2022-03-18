@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "results.h"
-#include "helpers.h"
+#include "common.h"
 #include "benchmark.h"
 
 // integer decimal point round
@@ -55,7 +55,7 @@ void print_open_flags(long flags) {
 }
 
 // print size in KB, MB, or GB
-void sprint_size(char *s, long bytes, int precision) {
+void sprint_size(char *s, ull bytes, int precision) {
   char *unit;
   long denominator = 1;
   if (bytes <= KB) {
@@ -73,24 +73,68 @@ void sprint_size(char *s, long bytes, int precision) {
     fprintf(stderr, "size too large.");
     exit(1);
   }
-  long dec = idecround(bytes % denominator, precision);
-  s += sprintf(s, "%ld", bytes / denominator);
+  ull dec = idecround(bytes % denominator, precision);
+  s += sprintf(s, "%llu", bytes / denominator);
   if (dec > 0) {
-    s += sprintf(s, ".%ld", dec);
+    s += sprintf(s, ".%llu", dec);
   }
   s += sprintf(s, "%s", unit);
 }
 
-void print_speed(long bytes, long ms) {
-  int precision = 1000;
-  long mbpu = bytes*precision / MB * 1000 / ms;
-  printf("MB/s: %ld.%ld\n", mbpu / precision, idecround(mbpu % precision, 3));
+char *get_denomination(ull bytes) {
+  switch (bytes) {
+    case 1:
+      return "B";
+    case KB:
+      return "KB";
+    case MB:
+      return "MB";
+    case GB:
+      return "GB";
+    case TB:
+      return "TB";
+    case PB:
+      return "PB";
+  }
+  return "[Not found: %llu]";
+}
+
+ull get_denominator(ull bytes) {
+  if (bytes <= KB) {
+    return 1;
+  } else if (bytes < MB) {
+    return KB;
+  } else if (bytes < GB) {
+    return MB;
+  } else if (bytes < TB) {
+    return GB;
+  } else {
+    fprintf(stderr, "size too large.");
+    exit(1);
+  }
+}
+
+double denominate(ull bytes) {
+  ull denominator = get_denominator(bytes);
+  return (double) bytes/(double) get_denominator(bytes);
 }
 
 void print_results(struct BenchmarkResults *results) {
-  char s[1000];
-  printf("time: %ld\n", results->time);
-  sprint_size(s, results->bytes, 3);
-  printf("bytes: %s\n", s);
-  printf("MB/s: %ld\n", results->bytes * 1000  / MB / results->time);
+  // ull bytes = 512 * MB;
+  // ull denominator = get_denominator(bytes);
+  // ull mil = 50;
+  // ull bps = bytes*1000/50;
+  // printf("test: %.3f%s/s\n", denominate(bps), get_denomination(get_denominator(bps)));
+  printf("time: %llu.%llus\n", results->time / 1000, results->time % 1000);
+
+  char size_opt[1000];
+  char size_res[1000];
+  sprint_size(size_opt, results->opts->bytes, 3);
+  sprint_size(size_res, results->bytes, 3);
+  printf("bytes: %s/%s\n", size_opt, size_res);
+
+
+  char speed[1000];
+  double bps = (double) results->bytes * (double) 1000 / (double) results->time;
+  printf("speed: %.3f%s/s\n", denominate(bps), get_denomination(get_denominator(bps)));
 }

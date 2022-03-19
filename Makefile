@@ -13,5 +13,5 @@ benchmark: clean
 
 .PHONY: test
 debug: clean
-	$(CC) $(shell ls src/*.h) $(shell ls src/*.c) -o build/benchmark -lm
+	$(CC) -ggdb $(shell ls src/*.h) $(shell ls src/*.c) -o build/benchmark -lm
 	gdb -ex run --args ./build/benchmark ./testing.txt

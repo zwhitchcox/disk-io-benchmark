@@ -88,7 +88,7 @@ char *get_buf(struct BenchmarkOpts *o) {
 void fill_buf(struct BenchmarkOpts *o, char *str) {
   int len = strlen(str);
   for (int i = 0; i < o->page_size; i++) {
-    o->buf[i] = o->buf[i % len];
+    o->buf[i] = str[i % len];
   }
 }
 
@@ -121,6 +121,8 @@ int main(int argc, char *argv[]) {
   o->bytes = bytes;
   o->io = *cur_file;
   o->page_size = page_size;
+  o->buf = get_buf(o);
+  fill_buf(o, "hello world, how are you.");
 
   while (*cur_file) {
     printf("WRITE\n");

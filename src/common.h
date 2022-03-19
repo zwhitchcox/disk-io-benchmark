@@ -29,7 +29,7 @@ typedef unsigned long long ull;
 
 
 typedef struct BenchmarkOpts {
-  int page_size;
+  ull page_size;
   char *io;
   char *buf;
   ull bytes;

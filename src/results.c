@@ -34,8 +34,6 @@ struct OpenFlags open_flags_map[] = {
   open_flag_str(O_RDWR),
 };
 
-
-
 void print_open_flags(long flags) {
   struct OpenFlags ofm;
   printf("open flags: ");
@@ -120,11 +118,6 @@ double denominate(ull bytes) {
 }
 
 void print_results(struct BenchmarkResults *results) {
-  // ull bytes = 512 * MB;
-  // ull denominator = get_denominator(bytes);
-  // ull mil = 50;
-  // ull bps = bytes*1000/50;
-  // printf("test: %.3f%s/s\n", denominate(bps), get_denomination(get_denominator(bps)));
   printf("time: %llu.%llus\n", results->time / 1000, results->time % 1000);
 
   char size_opt[1000];

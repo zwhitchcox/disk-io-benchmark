@@ -95,7 +95,7 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOpts *o) {
   }
   char read_buf[o->page_size];
   ull total_bytes_written = 0;
-  long long bytes_written, bytes_read;
+  int bytes_written, bytes_read;
   ull start = millis();
   long i = 0;
   ull remainder;

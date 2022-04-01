@@ -9,8 +9,8 @@
 # get a random string of data
 PAGE_SIZE=512
 random_string="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head --bytes $PAGE_SIZE)"
-test_input_file=${1:-"./test_input.txt"}
-test_output_file=${2:-"./test_output.txt"}
+test_input_file=${1:-"./data/test_input.txt"}
+test_output_file=${2:-"./data/test_output.txt"}
 GB=$((1024*1024*1024))
 pages=$((10*$GB/$PAGE_SIZE))
 if ! test -f $test_input_file; then

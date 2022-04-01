@@ -8,4 +8,4 @@
 #define DEFAULT_BYTES 64 * MB
 #define MAX_FILES 1024
 
-#endif
+#endif /* __BENCHMARK_CLI__ */

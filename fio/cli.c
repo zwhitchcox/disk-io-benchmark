@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "cli.h"
 #include "benchmark.h"
@@ -34,14 +35,6 @@ int starts_with(char *s1, char *s2) {
 //     }
 //   }
 //   return NULL;
-// }
-
-// int get_bool_char_arg(int argc, char *argv[] char c) {
-//   for (int i = 1; i < argc; i++) {
-//     if (*argv[i] == '-' && ) {
-//       return argv[i+1];
-//     }
-//   }
 // }
 
 enum OptionType {
@@ -94,7 +87,10 @@ void fill_buf(struct BenchmarkOpts *o, char *str) {
 
 int main(int argc, char *argv[]) {
   char *files[MAX_FILES];
+  char *copy_files[MAX_FILES];
   char **cur_file = files;
+  char **cur_copy_files =  copy_files;
+  int num_files = 0;
   ull bytes = 0;
   int page_size = 0;
   for (int i = 1; i < argc; i++) {
@@ -102,6 +98,9 @@ int main(int argc, char *argv[]) {
       bytes = normalize_bytes(argv[++i]);
     } else if (!strcmp(argv[i], "-p")) {
       page_size = normalize_bytes(argv[++i]);
+    } else if (!strcmp(argv[i], "-c")) {
+      *cur_copy_files++ = argv[++i];
+      *cur_copy_files++ = argv[++i];
     } else {
       *cur_file++ = argv[i];
     }
@@ -111,12 +110,13 @@ int main(int argc, char *argv[]) {
   bytes = bytes ? bytes : 512ull*MB;
 
 
-  if (cur_file == files) {
+  if (cur_file == files && cur_copy_files == copy_files) {
     fprintf(stderr, "No files specified\n");
     exit(1);
   }
 
   cur_file = files;
+  cur_copy_files = copy_files;
   struct BenchmarkOpts *o = malloc(sizeof(struct BenchmarkOpts));
   o->bytes = bytes;
   o->io = *cur_file;
@@ -125,12 +125,17 @@ int main(int argc, char *argv[]) {
   fill_buf(o, "hello world, how are you.");
 
   while (*cur_file) {
+    printf("file: %s\n", *cur_file);
+    o->io = *cur_file++;
     printf("WRITE\n");
     print_results(benchmark_write(o));
-    printf("\n");
-    printf("READ\n");
+    printf("\nREAD\n");
     print_results(benchmark_read(o));
-    cur_file++;
   }
-  // char *file = argv[1];
+  while (*cur_copy_files) {
+    printf("\nCOPY\n");
+    o->input = *cur_copy_files++;
+    o->output = *cur_copy_files++;
+    print_results(benchmark_copy(o));
+  }
 }

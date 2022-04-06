@@ -28,19 +28,16 @@ typedef unsigned long long ull;
 #endif
 
 
-typedef struct BenchmarkOpts {
+typedef struct BenchmarkOptions {
   ull page_size;
-  char *io;
   char *input;
   char *output;
   char *buf;
-  ull bytes;
 } benchmark_opts_t;
 
 typedef struct BenchmarkResults {
   ull time;
   ull bytes;
-  struct BenchmarkOpts *opts;
 } benchmark_results_t;
 
 #endif /* __BENCHMARK__COMMON__ */

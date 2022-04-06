@@ -4,7 +4,7 @@ CFLAGS=-I.
 
 .PHONY: clean
 clean:
-	rm -f *.test *.gch a.out
+	rm -rf build
 
 .PHONY: fio
 fio:
@@ -16,6 +16,6 @@ fio_verify:
 	$(CC) -DVERIFY $(shell ls fio/*.h) $(shell ls fio/*.c) -o build/$@ -lm
 
 .PHONY: debug
-debug: clean
-	$(CC) -ggdb $(shell ls fio/*.h) $(shell ls fio/*.c) -o build/benchmark -lm
-	gdb -ex run --args ./build/benchmark ./testing.txt
+fio_debug: clean
+	mkdir -p build;
+	$(CC) -DDEBUG $(shell ls fio/*.h) $(shell ls fio/*.c) -o build/$@ -lm

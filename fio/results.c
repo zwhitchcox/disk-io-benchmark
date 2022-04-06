@@ -117,17 +117,15 @@ double denominate(ull bytes) {
   return (double) bytes/(double) get_denominator(bytes);
 }
 
-void print_results(struct BenchmarkResults *results) {
-  printf("time: %llu.%llus\n", results->time / 1000, results->time % 1000);
+void print_results(struct BenchmarkOptions *o, struct BenchmarkResults *r) {
+  printf("time: %llu.%llus\n", r->time / 1000, r->time % 1000);
 
-  char size_opt[1000];
   char size_res[1000];
-  sprint_size(size_opt, results->opts->bytes, 3);
-  sprint_size(size_res, results->bytes, 3);
-  printf("bytes: %s/%s\n", size_opt, size_res);
+  sprint_size(size_res, r->bytes, 3);
+  printf("bytes: %s\n", size_res);
 
 
   char speed[1000];
-  double bps = (double) results->bytes * (double) 1000 / (double) results->time;
+  double bps = (double) r->bytes * (double) 1000 / (double) r->time;
   printf("speed: %.3f%s/s\n", denominate(bps), get_denomination(get_denominator(bps)));
 }

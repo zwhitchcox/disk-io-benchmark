@@ -2,8 +2,8 @@
 #define __BENCHMARK__
 #include "common.h"
 
-struct BenchmarkResults *benchmark_read(struct BenchmarkOpts *o);
-struct BenchmarkResults *benchmark_write(struct BenchmarkOpts *o);
-struct BenchmarkResults *benchmark_copy(struct BenchmarkOpts *o);
+struct BenchmarkResults *benchmark_read(struct BenchmarkOptions *o);
+struct BenchmarkResults *benchmark_write(struct BenchmarkOptions *o);
+struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o);
 
 #endif /* __BENCHMARK__ */

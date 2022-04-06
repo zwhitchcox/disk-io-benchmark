@@ -8,9 +8,13 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdbool.h>
+#include <pthread.h>
 
 #include "common.h"
 #include "results.h"
+
+#define POOL_SIZE 512
 
 ull millis() {
   struct timespec _t;
@@ -18,79 +22,15 @@ ull millis() {
   return _t.tv_sec * 1000 + lround(_t.tv_nsec / 1e6);
 }
 
-struct BenchmarkResults *benchmark_write(struct BenchmarkOpts *o) {
-  int file = open(o->io, O_CREAT | O_WRONLY, 0666);
-  if (!file) {
-    printf("Error opening source file '%s': %s\n", o->io, strerror(errno));
-  }
-  ull total_bytes_written = 0;
-  long long bytes_written;
-  ull start = millis();
-  ull k = 0;
-  // random string
-  while (total_bytes_written < o->bytes) {
-    ull remainder = total_bytes_written % o->page_size;
-    bytes_written = write(file, o->buf, o->page_size - remainder);
-    if (bytes_written < 0 && errno != EAGAIN) {
-      fprintf(stderr, "write error: %s\n", strerror(errno));
-      exit(1);
-    }
-    total_bytes_written += bytes_written;
-  }
-  struct BenchmarkResults *results = malloc(sizeof(struct BenchmarkResults));
-  results->time = millis() - start;
-  results->bytes = total_bytes_written;
-  results->opts = o;
-  close(file);
-  return results;
-}
-
-struct BenchmarkResults *benchmark_read(struct BenchmarkOpts *o) {
-  int file;
-  if ((file = open(o->io, O_RDONLY, 0666)) <= 0) {
-    printf("Error opening source file '%s': %s\n", o->io, strerror(errno));
-    exit(1);
-  }
-  char read_buf[o->page_size];
-  ull total_bytes_read = 0, bytes_read;
-  ull start = millis();
-  long i = 0;
-  while (total_bytes_read < o->bytes) {
-    bytes_read = read(file, read_buf, o->page_size);
-    if (bytes_read < 0 && errno != EAGAIN) {
-      fprintf(stderr, "Read error: %s\n", strerror(errno));
-      exit(1);
-    }
-    #ifdef VERIFY
-    printf("verifying\n");
-    for (int j = 0; j < bytes_read; j++) {
-      if (read_buf[j] != o->buf[(total_bytes_read + j) % o->page_size]) {
-        fprintf(stderr, "did not match: %c, %c: %d, %llu\n", read_buf[j],
-                o->buf[(total_bytes_read + j) % o->page_size],
-                j, bytes_read);
-        exit(1);
-      }
-    }
-    #endif /* VERIFY */
-    total_bytes_read += bytes_read;
-  }
-  struct BenchmarkResults *results = malloc(sizeof(struct BenchmarkResults));
-  results->time = millis() - start;
-  results->bytes = total_bytes_read;
-  results->opts = o;
-  close(file);
-  return results;
-}
-
-struct BenchmarkResults *benchmark_copy(struct BenchmarkOpts *o) {
+struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
   int input_file;
   if ((input_file = open(o->input, O_RDONLY, 0666)) <= 0) {
-    printf("Error opening source file '%s': %s\n", o->io, strerror(errno));
+    printf("Error opening source '%s': %s\n", o->input, strerror(errno));
     exit(1);
   }
   int output_file;
   if ((output_file = open(o->output, O_CREAT | O_WRONLY | O_TRUNC, 0666)) <= 0) {
-    printf("Error opening destination file '%s': %s\n", o->io, strerror(errno));
+    printf("Error opening output '%s': %s\n", o->output, strerror(errno));
     exit(1);
   }
   char read_buf[o->page_size];
@@ -120,8 +60,18 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOpts *o) {
   struct BenchmarkResults *results = malloc(sizeof(struct BenchmarkResults));
   results->time = millis() - start;
   results->bytes = total_bytes_written;
-  results->opts = o;
   close(output_file);
   close(input_file);
   return results;
 }
+
+// #define STACK_SIZE 4096
+// void benchmark_copy_thread(struct BenchmarkOptions *o, pthread_mutex_t mutex) {
+
+// }
+
+// struct BenchmarkResults *benchmark_copy_threaded(struct BenchmarkOptions *o) {
+//   pthread_mutex_t mutex;
+//   pthread_mutex_init(&mutex, NULL);
+
+// }

@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "cli.h"
 #include "benchmark.h"
@@ -74,68 +75,33 @@ ull normalize_bytes(char *bytes) {
   return num;
 }
 
-char *get_buf(struct BenchmarkOpts *o) {
-  return malloc(sizeof(char) * o->page_size);
-}
-
-void fill_buf(struct BenchmarkOpts *o, char *str) {
-  int len = strlen(str);
-  for (int i = 0; i < o->page_size; i++) {
-    o->buf[i] = str[i % len];
-  }
-}
 
 int main(int argc, char *argv[]) {
-  char *files[MAX_FILES];
-  char *copy_files[MAX_FILES];
-  char **cur_file = files;
-  char **cur_copy_files =  copy_files;
-  int num_files = 0;
-  ull bytes = 0;
-  int page_size = 0;
-  for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "-b")) {
-      bytes = normalize_bytes(argv[++i]);
-    } else if (!strcmp(argv[i], "-p")) {
-      page_size = normalize_bytes(argv[++i]);
-    } else if (!strcmp(argv[i], "-c")) {
-      *cur_copy_files++ = argv[++i];
-      *cur_copy_files++ = argv[++i];
-    } else {
-      *cur_file++ = argv[i];
+  int opt;
+  struct BenchmarkOptions *o = malloc(sizeof(struct BenchmarkOptions));
+  o->page_size = 64ull*KB;
+  while ((opt = getopt(argc, argv, "p:")) != -1) {
+    switch (opt) {
+      case 'p':
+        o->page_size = normalize_bytes(optarg);
+        break;
+      default: /* '?' */
+        fprintf(stderr, "Usage: %s [-p pagesize] input_file output_file\n", argv[0]);
+        exit(EXIT_FAILURE);
     }
   }
 
-  page_size = page_size ? page_size : 64ull*KB;
-  bytes = bytes ? bytes : 512ull*MB;
-
-
-  if (cur_file == files && cur_copy_files == copy_files) {
+  if (optind != (argc - 2)) {
     fprintf(stderr, "No files specified\n");
     exit(1);
   }
 
-  cur_file = files;
-  cur_copy_files = copy_files;
-  struct BenchmarkOpts *o = malloc(sizeof(struct BenchmarkOpts));
-  o->bytes = bytes;
-  o->io = *cur_file;
-  o->page_size = page_size;
-  o->buf = get_buf(o);
-  fill_buf(o, "hello world, how are you.");
+  o->input = argv[optind++];
+  o->output = argv[optind++];
 
-  while (*cur_file) {
-    printf("file: %s\n", *cur_file);
-    o->io = *cur_file++;
-    printf("WRITE\n");
-    print_results(benchmark_write(o));
-    printf("\nREAD\n");
-    print_results(benchmark_read(o));
-  }
-  while (*cur_copy_files) {
-    printf("\nCOPY\n");
-    o->input = *cur_copy_files++;
-    o->output = *cur_copy_files++;
-    print_results(benchmark_copy(o));
-  }
+  struct BenchmarkResults *r = benchmark_copy(o);
+  print_results(o, r);
+
+  free(o);
+  free(r);
 }

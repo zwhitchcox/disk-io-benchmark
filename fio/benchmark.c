@@ -37,8 +37,6 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
   ull total_bytes_written = 0;
   int bytes_written, bytes_read;
   ull start = millis();
-  long i = 0;
-  ull remainder;
   do {
     bytes_read = read(input_file, read_buf, o->page_size);
     if (bytes_read < 0 && errno != EAGAIN) {
@@ -65,13 +63,13 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
   return results;
 }
 
-// #define STACK_SIZE 4096
-// void benchmark_copy_thread(struct BenchmarkOptions *o, pthread_mutex_t mutex) {
+#define STACK_SIZE 4096
+void benchmark_copy_thread(struct BenchmarkOptions *o, pthread_mutex_t mutex) {
 
-// }
+}
 
-// struct BenchmarkResults *benchmark_copy_threaded(struct BenchmarkOptions *o) {
-//   pthread_mutex_t mutex;
-//   pthread_mutex_init(&mutex, NULL);
+struct BenchmarkResults *benchmark_copy_threaded(struct BenchmarkOptions *o) {
+  pthread_mutex_t mutex;
+  pthread_mutex_init(&mutex, NULL);
 
-// }
+}

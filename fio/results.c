@@ -41,7 +41,7 @@ void print_open_flags(long flags) {
     printf("O_RDONLY\n") ;
     return;
   }
-  for (int i = 0; i < sizeof(open_flags_map) / sizeof(open_flags_map[0]); i++) {
+  for (int i = 0; i < (int) (sizeof(open_flags_map) / sizeof(open_flags_map[0])); i++) {
     ofm = open_flags_map[i];
     // printf("checking %s\n", ofm.name);
     // printf("%d\n", flags);
@@ -113,19 +113,17 @@ ull get_denominator(ull bytes) {
 }
 
 double denominate(ull bytes) {
-  ull denominator = get_denominator(bytes);
   return (double) bytes/(double) get_denominator(bytes);
 }
 
 void print_results(struct BenchmarkOptions *o, struct BenchmarkResults *r) {
+  printf("input: %s\noutput: %s\n", o->input, o->output);
   printf("time: %llu.%llus\n", r->time / 1000, r->time % 1000);
 
   char size_res[1000];
   sprint_size(size_res, r->bytes, 3);
   printf("bytes: %s\n", size_res);
 
-
-  char speed[1000];
   double bps = (double) r->bytes * (double) 1000 / (double) r->time;
   printf("speed: %.3f%s/s\n", denominate(bps), get_denomination(get_denominator(bps)));
 }

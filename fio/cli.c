@@ -20,24 +20,6 @@ int starts_with(char *s1, char *s2) {
   return !*s2; // at the end of s2, so all of them matched
 }
 
-// char *get_char_arg(int argc, char *argv[], char c) {
-//   for (int i = 1; i < argc; i++) {
-//     if (*argv[i] == '-' && *(argv[i]+1) == c) {
-//       return argv[i+1];
-//     }
-//   }
-//   return NULL;
-// }
-
-// char *get_str_arg(int argc, char *argv[], char *str) {
-//   for (int i = 1; i < argc; i++) {
-//     if (!strcmp(argv[i], str)) {
-//       return argv[i+1];
-//     }
-//   }
-//   return NULL;
-// }
-
 enum OptionType {
   BOOLEAN,
   SINGLE_ARG,
@@ -63,7 +45,6 @@ long text_to_multiple(char *s) {
 }
 
 ull normalize_bytes(char *bytes) {
-  char *str;
   long num = 0;
   while (isdigit(*bytes)) {
     num *= 10;
@@ -80,10 +61,14 @@ int main(int argc, char *argv[]) {
   int opt;
   struct BenchmarkOptions *o = malloc(sizeof(struct BenchmarkOptions));
   o->page_size = 64ull*KB;
+  char *end;
   while ((opt = getopt(argc, argv, "p:")) != -1) {
     switch (opt) {
       case 'p':
         o->page_size = normalize_bytes(optarg);
+        break;
+      case 'j':
+        o->threads = strtod(optarg, &end);
         break;
       default: /* '?' */
         fprintf(stderr, "Usage: %s [-p pagesize] input_file output_file\n", argv[0]);

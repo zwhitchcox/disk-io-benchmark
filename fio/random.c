@@ -7,5 +7,5 @@ int benchmark_random() {
   gettimeofday(&seed, NULL);
   srand(seed.tv_usec);
   int num = rand() % 100;
-  printf("random: %d\n", rand()%100);
+  return num;
 }

@@ -33,6 +33,7 @@ typedef struct BenchmarkOptions {
   char *input;
   char *output;
   char *buf;
+  int threads;
 } benchmark_opts_t;
 
 typedef struct BenchmarkResults {

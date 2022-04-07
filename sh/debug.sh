@@ -20,4 +20,4 @@ if ! test -f $test_input_file; then
 fi
 rm -f $test_output_file
 make fio_debug
-./build/fio_debug $test_input_file $test_output_file
+./build/fio_debug -j $(nproc) $test_input_file $test_output_file

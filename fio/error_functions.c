@@ -115,7 +115,7 @@ void err_exit(const char *format, ...) {
 /* The following function does the same as errExit(), but expects
    the error number in 'errnum' */
 
-void errExitEN(int errnum, const char *format, ...) {
+void _errExitEN(int errnum, const char *format, ...) {
   va_list argList;
 
   va_start(argList, format);

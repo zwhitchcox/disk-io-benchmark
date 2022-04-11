@@ -7,9 +7,15 @@
 
 #ifdef DEBUG
 #define errExit(...) printf("Error at %s:%d\n", __FILE__, __LINE__); _errExit(__VA_ARGS__);
+#define errExitEN(...) printf("Error at %s:%d\n", __FILE__, __LINE__); _errExitEN(__VA_ARGS__);
+
+#define debugVarD(var) printf("%s: %d\n", #var, var);
 #else
 #define errExit(...) _errExit(__VA_ARGS__);
+#define errExitEN(...) _errExitEN(__VA_ARGS__);
 #endif
+
+
 
 
 /* Error diagnostic routines */
@@ -32,7 +38,7 @@ void _errExit(const char *format, ...) NORETURN ;
 
 void err_exit(const char *format, ...) NORETURN ;
 
-void errExitEN(int errnum, const char *format, ...) NORETURN ;
+void _errExitEN(int errnum, const char *format, ...) NORETURN ;
 
 void fatal(const char *format, ...) NORETURN ;
 

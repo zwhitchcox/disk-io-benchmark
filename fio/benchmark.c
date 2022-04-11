@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include "common.h"
 #include "benchmark.h"
 #include "results.h"
 
@@ -35,7 +36,7 @@ static void *benchmark_copy_thread(void *arg) {
     // This won't work with direct IO I don't think, because it won't be aligned
     bytes_read = 0;
     do {
-      bytes_read += (cur_read = read(ifd, read_buf+bytes_read, ti->page_size));
+      bytes_read += (cur_read = read(ifd, read_buf+bytes_read, ti->page_size - bytes_read));
       if (cur_read == -1) {
         errExit("benchmark_copy_thread: Read error");
       }
@@ -61,14 +62,16 @@ static void *benchmark_copy_thread(void *arg) {
 
 struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
   thread_info *ti = malloc(sizeof(thread_info));
+  ti->input_path = o->input_path;
+  ti->output_path = o->output_path;
+  ti->offset = 0;
+  ti->page_size = o->page_size;
   if (pthread_mutex_init(&ti->offset_lock, NULL) != 0) {
-    perror("mutex init failed");
-    exit(EXIT_FAILURE);
+    errExit("mutex init failed");
   };
 
   struct BenchmarkResults *results = malloc(sizeof(struct BenchmarkResults));
   results->start = millis();
-  ull offset = 0;
 
   int s;
   pthread_t *threads = calloc(o->num_threads, sizeof(pthread_t));
@@ -89,9 +92,9 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
       threads[i], (char *) res);
     free(res);
   }
+  results->bytes = ti->offset;
+  results->end = millis();
   free(threads);
   free(ti);
-  results->end = millis();
-  results->bytes = offset;
   return results;
 }

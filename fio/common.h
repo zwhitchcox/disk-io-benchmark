@@ -1,5 +1,21 @@
-#ifndef __BENCHMARK__COMMON__
-#define __BENCHMARK__COMMON__
+#ifndef COMMON_H
+#define COMMON_H
+
+#include <sys/types.h>  /* Type definitions used by many programs */
+#include <stdio.h>      /* Standard I/O functions */
+#include <stdlib.h>     /* Prototypes of commonly used library functions,
+                           plus EXIT_SUCCESS and EXIT_FAILURE constants */
+#include <unistd.h>     /* Prototypes for many system calls */
+#include <errno.h>      /* Declares errno and defines error constants */
+#include <string.h>     /* Commonly used string-handling functions */
+#include <stdbool.h>    /* 'bool' type plus 'true' and 'false' constants */
+#include <pthread.h>
+#include <math.h>
+#include <fcntl.h>
+#include <time.h>
+#include <ctype.h>
+#include "error_functions.h"  /* Declares our error-handling functions */
+
 
 typedef unsigned long long ull;
 
@@ -23,22 +39,17 @@ typedef unsigned long long ull;
 // time
 #define ms 1000ull
 
-#ifndef O_DIRECT
-#define O_DIRECT 16348
-#endif
-
-
 typedef struct BenchmarkOptions {
-  ull page_size;
-  char *input;
-  char *output;
-  char *buf;
-  int threads;
+  int page_size;
+  char *input_path;
+  char *output_path;
+  int num_threads;
 } benchmark_opts_t;
 
 typedef struct BenchmarkResults {
-  ull time;
+  ull end;
+  ull start;
   ull bytes;
 } benchmark_results_t;
 
-#endif /* __BENCHMARK__COMMON__ */
+#endif /* COMMON_H */

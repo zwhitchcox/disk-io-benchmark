@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <math.h>
-
+#define _GNU_SOURCE
 #include "results.h"
 #include "common.h"
 #include "benchmark.h"
@@ -16,26 +12,27 @@ long idecround(long num, long len) {
   return num / (precision-len);
 }
 
-struct OpenFlags {
+typedef struct OpenFlag {
   char *name;
   int num;
-};
+} open_flag;
 
-#define open_flag_str(OPT) (struct OpenFlags) { \
+#define open_flag_str(OPT) { \
     .name = #OPT, \
     .num = OPT, \
   }
 
-
-struct OpenFlags open_flags_map[] = {
+open_flag open_flags_map[] = {
   open_flag_str(O_DIRECT),
   open_flag_str(O_CREAT),
   open_flag_str(O_RDONLY),
   open_flag_str(O_RDWR),
+  open_flag_str(O_NONBLOCK),
+  open_flag_str(O_ASYNC),
 };
 
 void print_open_flags(long flags) {
-  struct OpenFlags ofm;
+  open_flag ofm;
   printf("open flags: ");
   if (!O_RDONLY && !flags) {
     printf("O_RDONLY\n") ;
@@ -117,13 +114,14 @@ double denominate(ull bytes) {
 }
 
 void print_results(struct BenchmarkOptions *o, struct BenchmarkResults *r) {
-  printf("input: %s\noutput: %s\n", o->input, o->output);
-  printf("time: %llu.%llus\n", r->time / 1000, r->time % 1000);
+  printf("input: %s\noutput: %s\n", o->input_path, o->output_path);
+  ull time = r->end - r->start;
+  printf("time: %llu.%llus\n", time / 1000, time % 1000);
 
   char size_res[1000];
   sprint_size(size_res, r->bytes, 3);
   printf("bytes: %s\n", size_res);
 
-  double bps = (double) r->bytes * (double) 1000 / (double) r->time;
+  double bps = (double) r->bytes * (double) 1000 / (double) time;
   printf("speed: %.3f%s/s\n", denominate(bps), get_denomination(get_denominator(bps)));
 }

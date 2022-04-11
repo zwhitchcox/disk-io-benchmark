@@ -1,8 +1,8 @@
 CC=gcc
 
-CFLAGS=-I. -std=c17 -Wall -Wextra -Werror -pedantic
+CFLAGS=-I. -std=c17 -Wall -Wextra -Werror -pedantic -pthread
 CFLAGS_PROD=-O2 -D_FORTIFY_SOURCE=2
-CFLAGS_DEBUG=-Og
+CFLAGS_DEBUG=-Og -g
 
 .PHONY: clean
 clean:
@@ -12,10 +12,6 @@ clean:
 fio:
 	mkdir -p build;
 	$(CC) $(CFLAGS) $(CFLAGS_PROD) $(shell ls fio/*.c) -o build/$@ -lm
-
-fio_verify:
-	mkdir -p build;
-	$(CC) $(CFLAGS) -DVERIFY $(shell ls fio/*.c) -o build/$@ -lm
 
 .PHONY: debug
 fio_debug: clean

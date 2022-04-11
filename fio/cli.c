@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <unistd.h>
+#include <getopt.h>
 
 #include "cli.h"
 #include "benchmark.h"
@@ -56,19 +50,26 @@ ull normalize_bytes(char *bytes) {
   return num;
 }
 
+void print_options(struct BenchmarkOptions *o) {
+  printf("input: %s\n", o->input_path);
+  printf("output: %s\n", o->output_path);
+  printf("num_threads: %d\n", o->num_threads);
+  printf("page_size: %d\n", o->page_size);
+}
+
 
 int main(int argc, char *argv[]) {
   int opt;
   struct BenchmarkOptions *o = malloc(sizeof(struct BenchmarkOptions));
   o->page_size = 64ull*KB;
   char *end;
-  while ((opt = getopt(argc, argv, "p:")) != -1) {
+  while ((opt = getopt(argc, argv, "p:j:")) != -1) {
     switch (opt) {
       case 'p':
         o->page_size = normalize_bytes(optarg);
         break;
       case 'j':
-        o->threads = strtod(optarg, &end);
+        o->num_threads = strtod(optarg, &end);
         break;
       default: /* '?' */
         fprintf(stderr, "Usage: %s [-p pagesize] input_file output_file\n", argv[0]);
@@ -81,8 +82,9 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  o->input = argv[optind++];
-  o->output = argv[optind++];
+  o->input_path = argv[optind++];
+  o->output_path = argv[optind++];
+  print_options(o);
 
   struct BenchmarkResults *r = benchmark_copy(o);
   print_results(o, r);

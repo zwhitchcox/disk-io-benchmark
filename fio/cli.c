@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   o->buf_size = 64ull*KB;
   o->align = 4*1024;
   char *end;
-  while ((opt = getopt(argc, argv, "b:j:align")) != -1) {
+  while ((opt = getopt(argc, argv, "db:j:align")) != -1) {
     switch (opt) {
       case 'a':
         o->align = normalize_bytes(optarg);

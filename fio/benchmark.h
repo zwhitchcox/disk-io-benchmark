@@ -6,13 +6,11 @@
 typedef struct ThreadInfo {
   pthread_mutex_t offset_lock;
   off_t offset;
-  char *output_path;
-  char *input_path;
-  off_t page_size;
+  benchmark_opts *opts;
 } thread_info;
 
-struct BenchmarkResults *benchmark_read(struct BenchmarkOptions *o);
-struct BenchmarkResults *benchmark_write(struct BenchmarkOptions *o);
-struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o);
+benchmark_results *benchmark_read(benchmark_opts *o);
+benchmark_results *benchmark_write(benchmark_opts *o);
+benchmark_results *benchmark_copy(benchmark_opts *o);
 
 #endif /* __BENCHMARK__ */

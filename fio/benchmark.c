@@ -13,23 +13,24 @@ ull millis() {
 
 #define STACK_SIZE 4096
 static void *benchmark_copy_thread(void *arg) {
-  struct ThreadInfo *ti = arg;
+  thread_info *ti = arg;
+  benchmark_opts *o = ti->opts;
   int ifd;
-  if ((ifd = open(ti->input_path, O_RDONLY | O_NOATIME, 0666)) == -1) {
-    errExit("Error opening input: '%s'\n", ti->input_path);
+  if ((ifd = open(o->input_path, O_RDONLY | O_NOATIME, 0666)) == -1) {
+    errExit("Error opening input: '%s'\n", o->input_path);
   }
   int ofd;
-  if ((ofd = open(ti->output_path, O_CREAT | O_WRONLY, 0666)) == -1) {
-    errExit("Error opening output: '%s', %s:%d\n", ti->output_path, __FILE__, __LINE__);
+  if ((ofd = open(o->output_path, O_CREAT | O_WRONLY, 0666)) == -1) {
+    errExit("Error opening output: '%s', %s:%d\n", o->output_path, __FILE__, __LINE__);
   }
-  char *read_buf = malloc(ti->page_size);
+  char *read_buf = malloc(o->buf_size);
   off_t offset;
   int bytes_read, cur_read;
   int bytes_written = 0;
   do {
     pthread_mutex_lock(&ti->offset_lock);
     offset = ti->offset;
-    ti->offset += ti->page_size;
+    ti->offset += o->buf_size;
     pthread_mutex_unlock(&ti->offset_lock);
     lseek(ifd, offset, SEEK_SET);
     lseek(ofd, offset, SEEK_SET);
@@ -37,14 +38,14 @@ static void *benchmark_copy_thread(void *arg) {
     // This won't work with direct IO I don't think, because it won't be aligned
     bytes_read = 0;
     do {
-      bytes_read += (cur_read = read(ifd, read_buf+bytes_read, ti->page_size));
-      if (bytes_read < ti->page_size) {
+      bytes_read += (cur_read = read(ifd, read_buf+bytes_read, o->buf_size));
+      if (bytes_read < o->buf_size) {
         lseek(ifd, cur_read, SEEK_CUR);
         if (cur_read == -1) {
           errExit("benchmark_copy_thread: Read error");
         }
       }
-    } while (bytes_read < ti->page_size && cur_read);
+    } while (bytes_read < o->buf_size && cur_read);
 
     bytes_written = 0;
     while (bytes_written < bytes_read) {
@@ -66,10 +67,8 @@ static void *benchmark_copy_thread(void *arg) {
 
 struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
   thread_info *ti = malloc(sizeof(thread_info));
-  ti->input_path = o->input_path;
-  ti->output_path = o->output_path;
   ti->offset = 0;
-  ti->page_size = o->page_size;
+  ti->opts = o;
   if (pthread_mutex_init(&ti->offset_lock, NULL) != 0) {
     errExit("mutex init failed");
   };
@@ -80,8 +79,8 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
   // this is just to truncate the file before writing to it.
   // otherwise, threads will truncate the file.
   int ofd;
-  if ((ofd = open(ti->output_path, O_CREAT | O_WRONLY | O_TRUNC, 0666)) == -1) {
-    errExit("Error opening output: '%s', %s:%d\n", ti->output_path, __FILE__, __LINE__);
+  if ((ofd = open(o->output_path, O_CREAT | O_WRONLY | O_TRUNC, 0666)) == -1) {
+    errExit("Error opening output: '%s', %s:%d\n", o->output_path, __FILE__, __LINE__);
   }
   close(ofd);
 

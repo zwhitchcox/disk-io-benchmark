@@ -1,36 +1,33 @@
 #!/bin/bash
-# echo WITHOUT VERIFICATION
-# ./build/fio_no_verify ./testing.txt
 
-# echo
-# echo WITH VERIFICATION
-# ./build/fio_verify ./testing.txt
+while getopts "h" arg; do
+  case $arg in
+    h)
+      echo "Usage (debug|test).sh [input_file] [output_file] [-- passthrough_cli_options]"
+  esac
+done
 
-# get a random string of data
-PAGE_SIZE=512
-random_string="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head --bytes $PAGE_SIZE)"
-test_input_file=${1:-"./test-data/test_input.txt"}
-test_output_file=${2:-"./test-data/test_output.txt"}
-GB=$((1024*1024*1024))
-pages=$((10*$GB/$PAGE_SIZE))
-# page_size=512
-page_size=$((4 * 1024**2))
-if ! test -f $test_input_file; then
-  for x in $(seq 1 $pages); do
-    echo $random_string >> $test_input_file
-  done
-fi
+test_base=$(dirname `dirname $(realpath "${BASH_SOURCE[-1]}")`)/test-data
+input_file=${@:$OPTIND:1}
+input_file=${input_file:-"$test_base/test_random_input.txt"}
+output_file=${@:$OPTIND+1:1}
+output_file=${output_file:-"$test_base/test_random_output.txt"}
+file_args="$input_file $output_file"
+
+
 rm -f $test_output_file
-# ./build/fio_debug -j $(nproc) $test_input_file $test_output_file
 if [ "$?" != "0" ]; then exit; fi
 
 case $0 in
   *test.sh)
     make fio
-    ./build/fio -j $(nproc) $test_input_file $test_output_file
+    cmd="./build/fio"
   ;;
   *debug.sh)
     make fio_debug
-    gdb -q -batch -ex run --args ./build/fio_debug  -j $(nproc) -p $page_size $test_input_file $test_output_file
+    cmd=(gdb -q -batch -ex "set print thread-events off" -ex run --args ./build/fio_debug)
   ;;
 esac
+
+# commands passed after -- will override defaults set here
+"${cmd[@]}" -j $(nproc) $* $file_args

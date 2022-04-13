@@ -50,29 +50,34 @@ ull normalize_bytes(char *bytes) {
   return num;
 }
 
-void print_options(struct BenchmarkOptions *o) {
+void print_options(benchmark_opts *o) {
   printf("input: %s\n", o->input_path);
   printf("output: %s\n", o->output_path);
   printf("num_threads: %d\n", o->num_threads);
-  printf("page_size: %d\n", o->page_size);
+  printf("buf_size: %ld\n", o->buf_size);
+  printf("align: %ld\n", o->align);
 }
 
 
 int main(int argc, char *argv[]) {
   int opt;
-  struct BenchmarkOptions *o = malloc(sizeof(struct BenchmarkOptions));
-  o->page_size = 64ull*KB;
+  benchmark_opts *o = malloc(sizeof(benchmark_opts));
+  o->buf_size = 64ull*KB;
+  o->align = 4*1024;
   char *end;
-  while ((opt = getopt(argc, argv, "p:j:")) != -1) {
+  while ((opt = getopt(argc, argv, "b:j:align")) != -1) {
     switch (opt) {
-      case 'p':
-        o->page_size = normalize_bytes(optarg);
+      case 'a':
+        o->align = normalize_bytes(optarg);
+        break;
+      case 'b':
+        o->buf_size = normalize_bytes(optarg);
         break;
       case 'j':
         o->num_threads = strtod(optarg, &end);
         break;
       default: /* '?' */
-        fprintf(stderr, "Usage: %s [-p pagesize] [-j num_threads] input_file output_file\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-b buffer_size] [-j num_threads] input_file output_file\n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
@@ -86,7 +91,7 @@ int main(int argc, char *argv[]) {
   o->output_path = argv[optind++];
   print_options(o);
 
-  struct BenchmarkResults *r = benchmark_copy(o);
+  benchmark_results *r = benchmark_copy(o);
   print_results(o, r);
 
   free(o);

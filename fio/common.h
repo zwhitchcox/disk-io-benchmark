@@ -47,16 +47,17 @@ typedef unsigned long long ull;
 #define ms 1000ull
 
 typedef struct BenchmarkOptions {
-  int page_size;
   char *input_path;
   char *output_path;
+  off_t buf_size;
+  off_t align;
   int num_threads;
-} benchmark_opts_t;
+} benchmark_opts;
 
 typedef struct BenchmarkResults {
   ull end;
   ull start;
   ull bytes;
-} benchmark_results_t;
+} benchmark_results;
 
 #endif /* COMMON_H */

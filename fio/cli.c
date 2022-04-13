@@ -56,6 +56,7 @@ void print_options(benchmark_opts *o) {
   printf("num_threads: %d\n", o->num_threads);
   printf("buf_size: %ld\n", o->buf_size);
   printf("align: %ld\n", o->align);
+  printf("direct: %s\n", o->direct ? "true" : "false");
 }
 
 
@@ -73,6 +74,9 @@ int main(int argc, char *argv[]) {
       case 'b':
         o->buf_size = normalize_bytes(optarg);
         break;
+      case 'd':
+        o->direct = true;
+        break;
       case 'j':
         o->num_threads = strtod(optarg, &end);
         break;
@@ -82,13 +86,18 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (optind != (argc - 2)) {
+
+  debugvar(argc,d);
+  debugvar(optind,d);
+  printf("positional: %s\n", argv[argc-1]);
+
+  if (optind > (argc - 2)) {
     fprintf(stderr, "No files specified\n");
     exit(1);
   }
 
-  o->input_path = argv[optind++];
-  o->output_path = argv[optind++];
+  o->input_path = argv[argc-2];
+  o->output_path = argv[argc-1];
   print_options(o);
 
   benchmark_results *r = benchmark_copy(o);

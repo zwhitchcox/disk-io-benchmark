@@ -52,6 +52,7 @@ typedef struct BenchmarkOptions {
   off_t buf_size;
   off_t align;
   int num_threads;
+  bool direct;
 } benchmark_opts;
 
 typedef struct BenchmarkResults {

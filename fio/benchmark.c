@@ -2,6 +2,11 @@
 #include "common.h"
 #include "benchmark.h"
 #include "results.h"
+#include <linux/fs.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
 
 #define POOL_SIZE 512
 
@@ -11,7 +16,6 @@ ull millis() {
   return _t.tv_sec * 1000 + lround(_t.tv_nsec / 1e6);
 }
 
-#define STACK_SIZE 4096
 static void *benchmark_copy_thread(void *arg) {
   thread_info *ti = arg;
   benchmark_opts *o = ti->opts;
@@ -19,11 +23,21 @@ static void *benchmark_copy_thread(void *arg) {
   if ((ifd = open(o->input_path, O_RDONLY | O_NOATIME, 0666)) == -1) {
     errExit("Error opening input: '%s'\n", o->input_path);
   }
+
   int ofd;
   if ((ofd = open(o->output_path, O_CREAT | O_WRONLY, 0666)) == -1) {
-    errExit("Error opening output: '%s', %s:%d\n", o->output_path, __FILE__, __LINE__);
+    errExit("Error opening output: '%s'\n", o->output_path);
   }
-  char *read_buf = malloc(o->buf_size);
+
+
+  char *buf;
+  if (o->direct) {
+    if (posix_memalign((void **) &buf, o->align, o->buf_size)) {
+      errExit("posix_memalign");
+    }
+  } else {
+    buf = malloc(o->buf_size);
+  }
   off_t offset;
   int bytes_read, cur_read;
   int bytes_written = 0;
@@ -38,7 +52,7 @@ static void *benchmark_copy_thread(void *arg) {
     // This won't work with direct IO I don't think, because it won't be aligned
     bytes_read = 0;
     do {
-      bytes_read += (cur_read = read(ifd, read_buf+bytes_read, o->buf_size));
+      bytes_read += (cur_read = read(ifd, buf + bytes_read, o->buf_size));
       if (bytes_read < o->buf_size) {
         lseek(ifd, cur_read, SEEK_CUR);
         if (cur_read == -1) {
@@ -49,7 +63,7 @@ static void *benchmark_copy_thread(void *arg) {
 
     bytes_written = 0;
     while (bytes_written < bytes_read) {
-      bytes_written += write(ofd, read_buf+bytes_written, bytes_read);
+      bytes_written += write(ofd, buf + bytes_written, bytes_read);
       if (bytes_written < bytes_read) {
         errExit("benchmark_copy_thread: Write error");
       }
@@ -65,7 +79,7 @@ static void *benchmark_copy_thread(void *arg) {
   return NULL;
 }
 
-struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
+benchmark_results *benchmark_copy(benchmark_opts *o) {
   thread_info *ti = malloc(sizeof(thread_info));
   ti->offset = 0;
   ti->opts = o;
@@ -73,16 +87,8 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
     errExit("mutex init failed");
   };
 
-  struct BenchmarkResults *results = malloc(sizeof(struct BenchmarkResults));
+  benchmark_results *results = malloc(sizeof(benchmark_results));
   results->start = millis();
-
-  // this is just to truncate the file before writing to it.
-  // otherwise, threads will truncate the file.
-  int ofd;
-  if ((ofd = open(o->output_path, O_CREAT | O_WRONLY | O_TRUNC, 0666)) == -1) {
-    errExit("Error opening output: '%s', %s:%d\n", o->output_path, __FILE__, __LINE__);
-  }
-  close(ofd);
 
   int s;
   pthread_t *threads = calloc(o->num_threads, sizeof(pthread_t));

@@ -13,6 +13,8 @@ test_input_file=${1:-"./test-data/test_input.txt"}
 test_output_file=${2:-"./test-data/test_output.txt"}
 GB=$((1024*1024*1024))
 pages=$((10*$GB/$PAGE_SIZE))
+# page_size=512
+page_size=$((4 * 1024**2))
 if ! test -f $test_input_file; then
   for x in $(seq 1 $pages); do
     echo $random_string >> $test_input_file
@@ -29,6 +31,6 @@ case $0 in
   ;;
   *debug.sh)
     make fio_debug
-    gdb -q -ex run --args ./build/fio_debug  -j $(nproc) $test_input_file $test_output_file
+    gdb -q -batch -ex run --args ./build/fio_debug  -j $(nproc) -p $page_size $test_input_file $test_output_file
   ;;
 esac

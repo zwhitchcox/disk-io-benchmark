@@ -9,7 +9,6 @@
 #define errExit(...) printf("Error at %s:%d\n", __FILE__, __LINE__); _errExit(__VA_ARGS__);
 #define errExitEN(...) printf("Error at %s:%d\n", __FILE__, __LINE__); _errExitEN(__VA_ARGS__);
 
-#define debugVarD(var) printf("%s: %d\n", #var, var);
 #else
 #define errExit(...) _errExit(__VA_ARGS__);
 #define errExitEN(...) _errExitEN(__VA_ARGS__);

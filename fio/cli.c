@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         o->num_threads = strtod(optarg, &end);
         break;
       default: /* '?' */
-        fprintf(stderr, "Usage: %s [-p pagesize] input_file output_file\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-p pagesize] [-j num_threads] input_file output_file\n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }

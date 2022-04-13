@@ -1,7 +1,4 @@
 a.out
 *.gch
 build
-test_output.txt
-test_input.txt
-test_io.txt
-testing.txt
+test-data

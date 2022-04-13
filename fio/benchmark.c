@@ -19,12 +19,13 @@ static void *benchmark_copy_thread(void *arg) {
     errExit("Error opening input: '%s'\n", ti->input_path);
   }
   int ofd;
-  if ((ofd = open(ti->output_path, O_CREAT | O_WRONLY | O_TRUNC, 0666)) == -1) {
+  if ((ofd = open(ti->output_path, O_CREAT | O_WRONLY, 0666)) == -1) {
     errExit("Error opening output: '%s', %s:%d\n", ti->output_path, __FILE__, __LINE__);
   }
   char *read_buf = malloc(ti->page_size);
   off_t offset;
-  int bytes_read, cur_read, bytes_written;
+  int bytes_read, cur_read;
+  int bytes_written = 0;
   do {
     pthread_mutex_lock(&ti->offset_lock);
     offset = ti->offset;
@@ -36,18 +37,21 @@ static void *benchmark_copy_thread(void *arg) {
     // This won't work with direct IO I don't think, because it won't be aligned
     bytes_read = 0;
     do {
-      bytes_read += (cur_read = read(ifd, read_buf+bytes_read, ti->page_size - bytes_read));
-      if (cur_read == -1) {
-        errExit("benchmark_copy_thread: Read error");
+      bytes_read += (cur_read = read(ifd, read_buf+bytes_read, ti->page_size));
+      if (bytes_read < ti->page_size) {
+        lseek(ifd, cur_read, SEEK_CUR);
+        if (cur_read == -1) {
+          errExit("benchmark_copy_thread: Read error");
+        }
       }
     } while (bytes_read < ti->page_size && cur_read);
 
     bytes_written = 0;
     while (bytes_written < bytes_read) {
-      if (bytes_written == -1) {
+      bytes_written += write(ofd, read_buf+bytes_written, bytes_read);
+      if (bytes_written < bytes_read) {
         errExit("benchmark_copy_thread: Write error");
       }
-      bytes_written += write(ofd, read_buf+bytes_written, bytes_read);
     }
   } while (bytes_written);
 
@@ -73,6 +77,14 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
   struct BenchmarkResults *results = malloc(sizeof(struct BenchmarkResults));
   results->start = millis();
 
+  // this is just to truncate the file before writing to it.
+  // otherwise, threads will truncate the file.
+  int ofd;
+  if ((ofd = open(ti->output_path, O_CREAT | O_WRONLY | O_TRUNC, 0666)) == -1) {
+    errExit("Error opening output: '%s', %s:%d\n", ti->output_path, __FILE__, __LINE__);
+  }
+  close(ofd);
+
   int s;
   pthread_t *threads = calloc(o->num_threads, sizeof(pthread_t));
   for (int i = 0; i < o->num_threads; i++) {
@@ -88,8 +100,6 @@ struct BenchmarkResults *benchmark_copy(struct BenchmarkOptions *o) {
     if (s != 0) {
       errExitEN(s, "pthread_join");
     }
-    printf("Joined with thread %ld; returned value was  %s\n",
-      threads[i], (char *) res);
     free(res);
   }
   results->bytes = ti->offset;

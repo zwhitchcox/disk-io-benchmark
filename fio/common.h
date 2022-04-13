@@ -22,6 +22,13 @@ typedef unsigned long long ull;
 // so we know to remove print statement eventually
 #define debug printf
 
+#ifdef DEBUG
+#define debugvar(var, type) printf("%s: %" #type "\n", #var, var);
+#else
+#define debugvar
+#endif
+
+
 // bytes
 #define KB 1024ull
 #define MB (KB*KB)

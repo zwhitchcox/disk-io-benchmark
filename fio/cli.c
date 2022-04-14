@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   o->buf_size = 64ull*KB;
   o->align = 4*1024;
   char *end;
-  while ((opt = getopt(argc, argv, "db:j:align")) != -1) {
+  while ((opt = getopt(argc, argv, "db:j:a:")) != -1) {
     switch (opt) {
       case 'a':
         o->align = normalize_bytes(optarg);
@@ -86,18 +86,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-
-  debugvar(argc,d);
-  debugvar(optind,d);
-  printf("positional: %s\n", argv[argc-1]);
-
-  if (optind > (argc - 2)) {
-    fprintf(stderr, "No files specified\n");
-    exit(1);
-  }
-
-  o->input_path = argv[argc-2];
-  o->output_path = argv[argc-1];
+  o->input_path = argv[optind];
+  o->output_path = argv[optind+1];
   print_options(o);
 
   benchmark_results *r = benchmark_copy(o);

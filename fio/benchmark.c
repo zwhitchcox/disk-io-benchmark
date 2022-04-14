@@ -2,13 +2,7 @@
 #include "common.h"
 #include "benchmark.h"
 #include "results.h"
-#include <linux/fs.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-
-#define POOL_SIZE 512
+#include <unistd.h>
 
 ull millis() {
   struct timespec _t;
@@ -19,53 +13,87 @@ ull millis() {
 static void *benchmark_copy_thread(void *arg) {
   thread_info *ti = arg;
   benchmark_opts *o = ti->opts;
+
+  int iflags = O_RDONLY | O_NOATIME;
+  if (o->direct) {
+    iflags |= O_DIRECT;
+  }
   int ifd;
-  if ((ifd = open(o->input_path, O_RDONLY | O_NOATIME, 0666)) == -1) {
+  if ((ifd = open(o->input_path, iflags, 0666)) == -1) {
     errExit("Error opening input: '%s'\n", o->input_path);
   }
 
+  int oflags = O_CREAT | O_WRONLY;
+  if (o->direct) {
+    oflags |= O_DIRECT;
+  }
   int ofd;
-  if ((ofd = open(o->output_path, O_CREAT | O_WRONLY, 0666)) == -1) {
+  if ((ofd = open(o->output_path, oflags, 0666)) == -1) {
     errExit("Error opening output: '%s'\n", o->output_path);
   }
-
+  off_t buf_size = o->buf_size - (o->buf_size % o->align); // size must be aligned too
 
   char *buf;
   if (o->direct) {
-    if (posix_memalign((void **) &buf, o->align, o->buf_size)) {
+    if (posix_memalign((void **) &buf, o->align, buf_size)) {
       errExit("posix_memalign");
     }
   } else {
-    buf = malloc(o->buf_size);
+    buf = malloc(buf_size);
   }
+
   off_t offset;
   int bytes_read, cur_read;
   int bytes_written = 0;
   do {
     pthread_mutex_lock(&ti->offset_lock);
     offset = ti->offset;
-    ti->offset += o->buf_size;
+    ti->offset += buf_size;
     pthread_mutex_unlock(&ti->offset_lock);
-    lseek(ifd, offset, SEEK_SET);
-    lseek(ofd, offset, SEEK_SET);
 
-    // This won't work with direct IO I don't think, because it won't be aligned
-    bytes_read = 0;
-    do {
-      bytes_read += (cur_read = read(ifd, buf + bytes_read, o->buf_size));
-      if (bytes_read < o->buf_size) {
-        lseek(ifd, cur_read, SEEK_CUR);
-        if (cur_read == -1) {
-          errExit("benchmark_copy_thread: Read error");
+    if (o->direct) {
+      bytes_read = 0;
+      do {
+        lseek(ifd, offset, SEEK_SET);
+        bytes_read = read(ifd, buf, buf_size);
+        if (bytes_read < o->buf_size) {
+          if (!read(ifd, buf, buf_size)) {
+            break;
+          }
+          if (bytes_read == -1) {
+            errExit("benchmark_copy_thread: read error");
+          }
         }
-      }
-    } while (bytes_read < o->buf_size && cur_read);
+      } while (bytes_read < buf_size);
 
-    bytes_written = 0;
-    while (bytes_written < bytes_read) {
-      bytes_written += write(ofd, buf + bytes_written, bytes_read);
-      if (bytes_written < bytes_read) {
-        errExit("benchmark_copy_thread: Write error");
+      bytes_written = 0;
+      while (bytes_written < bytes_read) {
+        lseek(ofd, offset+bytes_written, SEEK_SET);
+        bytes_written = write(ofd, buf, bytes_read);
+        bytes_read-= bytes_written;
+        if (bytes_written == -1) {
+          errExit("benchmark_copy_thread: write error");
+        }
+      };
+    } else {
+      bytes_read = 0;
+      lseek(ifd, offset, SEEK_SET);
+      lseek(ofd, offset, SEEK_SET);
+      do {
+        bytes_read += (cur_read = read(ifd, buf + bytes_read, buf_size-bytes_read));
+        if (bytes_read < buf_size) {
+          if (cur_read == -1) {
+            errExit("benchmark_copy_thread: Read error");
+          }
+        }
+      } while (bytes_read < buf_size && cur_read);
+
+      bytes_written = 0;
+      while (bytes_written < bytes_read) {
+        bytes_written += write(ofd, buf + bytes_written, bytes_read);
+        if (bytes_written < bytes_read) {
+          errExit("benchmark_copy_thread: Write error");
+        }
       }
     }
   } while (bytes_written);

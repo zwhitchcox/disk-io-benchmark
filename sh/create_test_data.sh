@@ -15,7 +15,7 @@ fi
 
 if ! test -f $TEST_SEQ_PATH; then
   echo Creating $TEST_SEQ_PATH
-  for i in $(seq 1 $((100))); do
+  for i in $(seq 1 $((1024**2))); do
     echo $i >> $TEST_SEQ_PATH;
   done
 fi

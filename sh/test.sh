@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 test_base=$(dirname `dirname $(realpath "${BASH_SOURCE[-1]}")`)/test-data
 default_files=("$test_base/test_random_input.txt" "$test_base/test_random_output.txt")
 

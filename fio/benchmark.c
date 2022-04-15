@@ -45,19 +45,21 @@ static void *benchmark_copy_thread(void *arg) {
   off_t offset;
   int bytes_read, cur_read;
   int bytes_written = 0;
-  do {
-    pthread_mutex_lock(&ti->offset_lock);
-    offset = ti->offset;
-    ti->offset += buf_size;
-    pthread_mutex_unlock(&ti->offset_lock);
+  int end = false;
+  if (o->direct) {
+    do {
+      pthread_mutex_lock(&ti->offset_lock);
+      offset = ti->offset;
+      ti->offset += buf_size;
+      pthread_mutex_unlock(&ti->offset_lock);
 
-    if (o->direct) {
       bytes_read = 0;
       do {
         lseek(ifd, offset, SEEK_SET);
         bytes_read = read(ifd, buf, buf_size);
         if (bytes_read < o->buf_size) {
           if (!read(ifd, buf, buf_size)) {
+            end = true;
             break;
           }
           if (bytes_read == -1) {
@@ -68,14 +70,19 @@ static void *benchmark_copy_thread(void *arg) {
 
       bytes_written = 0;
       while (bytes_written < bytes_read) {
-        lseek(ofd, offset+bytes_written, SEEK_SET);
-        bytes_written = write(ofd, buf, bytes_read);
-        bytes_read-= bytes_written;
+        lseek(ofd, offset, SEEK_SET);
+        bytes_written = write(ofd, buf, buf_size);
         if (bytes_written == -1) {
           errExit("benchmark_copy_thread: write error");
         }
       };
-    } else {
+    } while (!end);
+  } else {
+    do {
+      pthread_mutex_lock(&ti->offset_lock);
+      offset = ti->offset;
+      ti->offset += buf_size;
+      pthread_mutex_unlock(&ti->offset_lock);
       bytes_read = 0;
       lseek(ifd, offset, SEEK_SET);
       lseek(ofd, offset, SEEK_SET);
@@ -90,13 +97,19 @@ static void *benchmark_copy_thread(void *arg) {
 
       bytes_written = 0;
       while (bytes_written < bytes_read) {
-        bytes_written += write(ofd, buf + bytes_written, bytes_read);
+        bytes_written += write(ofd, buf + bytes_written, bytes_read-bytes_written);
         if (bytes_written < bytes_read) {
           errExit("benchmark_copy_thread: Write error");
         }
       }
-    }
-  } while (bytes_written);
+    } while (bytes_written);
+  }
+
+  if (o->direct && bytes_read) {
+    if (ftruncate(ofd, offset+bytes_read) == -1) {
+      errExit("direct truncate");
+    };
+  }
 
   if (close(ofd) == -1) {
     errExit("close");

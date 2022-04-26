@@ -10,8 +10,11 @@ mkdir -p test-data
 if ! test -f $TEST_RANDOM_PATH; then
   echo creating $TEST_RANDOM_PATH
   echo This will take a while...
-  cat /dev/random | tr -dc 'a-zA-Z0-9' | head --bytes $((10*1024**3)) >> $TEST_RANDOM_PATH
+  for i in `seq 1 4`; do
+    cat /dev/random | tr -dc 'a-zA-Z0-9' | head --bytes $((2*1024**3)) >> $TEST_RANDOM_PATH_tmp &
+  done
 fi
+mv $TEST_RANDOM_PATH_tmp $TEST_RANDOM_PATH
 
 if ! test -f $TEST_SEQ_PATH; then
   echo Creating $TEST_SEQ_PATH

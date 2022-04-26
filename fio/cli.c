@@ -40,7 +40,7 @@ long text_to_multiple(char *s) {
 
 ull normalize_bytes(char *bytes) {
   long num = 0;
-  while (isdigit(*bytes)) {
+  while (isdigit((int) *bytes)) {
     num *= 10;
     num += (*bytes++ - '0') % 10;
   }

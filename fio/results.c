@@ -12,42 +12,6 @@ long idecround(long num, long len) {
   return num / (precision-len);
 }
 
-typedef struct OpenFlag {
-  char *name;
-  int num;
-} open_flag;
-
-#define open_flag_str(OPT) { \
-    .name = #OPT, \
-    .num = OPT, \
-  }
-
-open_flag open_flags_map[] = {
-  open_flag_str(O_DIRECT),
-  open_flag_str(O_CREAT),
-  open_flag_str(O_RDONLY),
-  open_flag_str(O_RDWR),
-  open_flag_str(O_NONBLOCK),
-  open_flag_str(O_ASYNC),
-};
-
-void print_open_flags(long flags) {
-  open_flag ofm;
-  printf("open flags: ");
-  if (!O_RDONLY && !flags) {
-    printf("O_RDONLY\n") ;
-    return;
-  }
-  for (int i = 0; i < (int) (sizeof(open_flags_map) / sizeof(open_flags_map[0])); i++) {
-    ofm = open_flags_map[i];
-    // printf("checking %s\n", ofm.name);
-    // printf("%d\n", flags);
-    if (ofm.num & flags) {
-      printf("%s ", ofm.name);
-    }
-  }
-  printf("\n");
-}
 
 // print size in KB, MB, or GB
 void sprint_size(char *s, ull bytes, int precision) {

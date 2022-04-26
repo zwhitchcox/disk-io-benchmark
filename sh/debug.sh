@@ -33,4 +33,4 @@ esac
 
 set -x
 # commands passed after -- will override defaults set here
-"${cmd[@]}" -j $(nproc) ${@:$OPTIND} "${default_files[@]}"
+"${cmd[@]}" -j $(($(nproc)/2)) ${@:$OPTIND} "${default_files[@]}"

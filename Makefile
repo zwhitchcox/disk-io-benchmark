@@ -8,12 +8,12 @@ CFLAGS_DEBUG=-Og -g
 clean:
 	rm -rf build
 
-.PHONY: fio
-fio:
+.PHONY: benchmark
+benchmark:
 	mkdir -p build;
-	$(CC) $(CFLAGS) $(CFLAGS_PROD) $(shell ls fio/*.c) -o build/$@ -lm
+	$(CC) $(CFLAGS) $(CFLAGS_PROD) $(shell ls benchmark/*.c) -o build/$@ -lm
 
 .PHONY: debug
-fio_debug: clean
+benchmark_debug: clean
 	mkdir -p build;
-	$(CC) $(CFLAGS) $(CFLAGS_DEBUG) -DDEBUG $(shell ls fio/*.c) -o build/$@ -lm
+	$(CC) $(CFLAGS) $(CFLAGS_DEBUG) -DDEBUG $(shell ls benchmark/*.c) -o build/$@ -lm

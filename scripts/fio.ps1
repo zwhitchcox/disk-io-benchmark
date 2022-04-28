@@ -1,0 +1,1 @@
+fio --filename=test.txt --rw=write --bs=64k --ioengine=sync --iodepth=64 --numjobs=4 --time_based --group_reporting --eta-newline=1 --size=10g

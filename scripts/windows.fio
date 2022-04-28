@@ -1,0 +1,12 @@
+[global]
+bs=64k
+size=2G
+time_based
+rw=write
+iodepth=256
+fsync=32
+direct=0
+numjobs=4
+
+[job1]
+filename=test-data/fio.txt

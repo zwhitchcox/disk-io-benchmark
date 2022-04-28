@@ -1,0 +1,14 @@
+[global]
+bs=64K
+iodepth=256
+ioengine=libaio
+group_reporting
+time_based
+runtime=120
+numjobs=4
+rw=write
+eta-newline=1
+direct=1
+
+[job1]
+filename=/dev/sda

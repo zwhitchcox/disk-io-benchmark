@@ -2,3 +2,6 @@ a.out
 *.gch
 build
 test-data
+files
+*.stackdump
+play

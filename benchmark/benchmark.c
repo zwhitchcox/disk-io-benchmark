@@ -3,6 +3,22 @@
 #include "benchmark.h"
 #include "results.h"
 #include <unistd.h>
+#include <stdint.h>
+#if defined(__APPLE__)
+#include <sys/disk.h>
+#elif defined _WIN32 || defined __CYGWIN__
+#include <windows.h>
+#include <io.h>
+#include <malloc.h>
+#include <winioctl.h>
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel_)
+#include <sys/disk.h>
+#else
+#include <linux/fs.h>
+#include <scsi/sg.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#endif
 
 ull millis() {
   struct timespec _t;
@@ -34,6 +50,12 @@ static void *benchmark_copy_thread(void *arg) {
   off_t buf_size = o->buf_size - (o->buf_size % o->align); // size must be aligned too
 
   char *buf;
+#if defined(_WIN32) || defined __CYGWIN__
+  buf = aligned_alloc(buf_size, o->align);
+  if (buf == NULL) {
+    errExit("insufficient memory\n");
+  };
+#else
   if (o->direct) {
     if (posix_memalign((void **) &buf, o->align, buf_size)) {
       errExit("posix_memalign");
@@ -41,6 +63,7 @@ static void *benchmark_copy_thread(void *arg) {
   } else {
     buf = malloc(buf_size);
   }
+#endif
 
   off_t offset;
   int bytes_read, cur_read;
@@ -110,6 +133,7 @@ static void *benchmark_copy_thread(void *arg) {
       errExit("direct truncate");
     };
   }
+  debug("closing fds\n");
 
   if (close(ofd) == -1) {
     errExit("close");
@@ -132,10 +156,10 @@ benchmark_results *benchmark_copy(benchmark_opts *o) {
   benchmark_results *results = malloc(sizeof(benchmark_results));
   results->start = millis();
 
-  int s;
   pthread_t *threads = calloc(o->num_threads, sizeof(pthread_t));
   for (int i = 0; i < o->num_threads; i++) {
     s = pthread_create(&threads[i], NULL, &benchmark_copy_thread, ti);
+    debug("created\n");
     if (s != 0) {
       errExitEN(s, "pthread_create\n");
     }
@@ -143,12 +167,15 @@ benchmark_results *benchmark_copy(benchmark_opts *o) {
 
   void *res;
   for (int i = 0; i < o->num_threads; i++) {
+    debug("joining\n");
     s = pthread_join(threads[i], &res);
+    debug("joined\n");
     if (s != 0) {
       errExitEN(s, "pthread_join");
     }
     free(res);
   }
+  printf("bytes: %ld\n", ti->offset);
   results->bytes = ti->offset;
   results->end = millis();
   free(threads);

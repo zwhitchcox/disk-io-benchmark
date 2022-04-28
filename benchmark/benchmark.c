@@ -132,7 +132,6 @@ benchmark_results *benchmark_copy(benchmark_opts *o) {
   benchmark_results *results = malloc(sizeof(benchmark_results));
   results->start = millis();
 
-  int s;
   pthread_t *threads = calloc(o->num_threads, sizeof(pthread_t));
   for (int i = 0; i < o->num_threads; i++) {
     s = pthread_create(&threads[i], NULL, &benchmark_copy_thread, ti);
